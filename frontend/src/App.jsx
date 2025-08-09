@@ -1,16 +1,19 @@
-import Logo from '/logo.svg'
+import { Routes, Route } from 'react-router-dom';
+import Home from "./page/Home.jsx";
+import PageNotFound from "./page/PageNotFound.jsx";
+
 
 function App() {
 
   return (
     <>
-      <div>
-        <a target="_blank">
-          <img src={Logo} className="logo" alt="logo" />
-        </a>
-      </div>
+      <Routes>
+        <Route path="/" element={<Home />} />
+
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
