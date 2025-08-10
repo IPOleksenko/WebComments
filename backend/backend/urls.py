@@ -7,7 +7,6 @@ urlpatterns = [
     path('api/captcha/', include('captcha_api.urls')),
     path('captcha/', include('captcha.urls')),
     
-    path('api/comments/', include('comments.urls')),
     path('api/posts/', include('posts.urls')),
 
 ]

@@ -40,7 +40,6 @@ INSTALLED_APPS = [
     'captcha',
 
     'csrf',
-    'comments',
     'posts',
     'captcha_api',
 ]

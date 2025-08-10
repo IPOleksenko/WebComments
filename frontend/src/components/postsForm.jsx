@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import getCookie from "../utils/getCookie";
-import Captcha from "../components/captcha.jsx";
+import getCookie from "../utils/getCookie.jsx";
+import Captcha from "./captcha.jsx";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-function PostForm({ onMessage, onPostCreated }) {
+function PostsForm({ onMessage, onPostCreated, parentId = null }) {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -12,6 +12,7 @@ function PostForm({ onMessage, onPostCreated }) {
     text_html: "",
     captcha_0: "",
     captcha_1: "",
+    parent_id: parentId,
   });
 
   const [showCaptcha, setShowCaptcha] = useState(false);
@@ -26,8 +27,9 @@ function PostForm({ onMessage, onPostCreated }) {
       username: savedUsername,
       email: savedEmail,
       homepage_url: savedHomepage,
+      parent_id: parentId,
     }));
-  }, []);
+  }, [parentId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -124,7 +126,9 @@ function PostForm({ onMessage, onPostCreated }) {
           />
         </div>
 
-        <button type="submit">Submit</button>
+        <button type="submit">
+          {parentId ? "Reply" : "Submit"}
+        </button>
       </form>
 
       {showCaptcha && (
@@ -138,4 +142,4 @@ function PostForm({ onMessage, onPostCreated }) {
   );
 }
 
-export default PostForm;
+export default PostsForm;

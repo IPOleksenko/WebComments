@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import PostForm from "../components/postForm.jsx";
+import PostForm from "../components/postsForm.jsx";
 import PostsList from "../components/postsList.jsx";
 
 function Home() {
