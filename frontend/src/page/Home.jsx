@@ -1,17 +1,15 @@
-import Logo from '/logo.svg'
+import { useState } from "react";
+import PostForm from "../components/postForm.jsx";
 
 function Home() {
+  const [message, setMessage] = useState("");
 
   return (
     <>
-      <div>
-        <a target="_blank">
-          <img src={Logo} className="logo" alt="logo" />
-          qqd
-        </a>
-      </div>
+      <PostForm onMessage={setMessage} />
+      {message && <p>{message}</p>}
     </>
-  )
+  );
 }
 
-export default Home
+export default Home;
