@@ -1,72 +1,78 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import getCookie from "../utils/getCookie";
 import Captcha from "../components/captcha.jsx";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-function PostForm({ onMessage }) {
+function PostForm({ onMessage, onPostCreated }) {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     homepage_url: "",
     text_html: "",
-    captcha_0: "", // captcha key
-    captcha_1: "", // user input
+    captcha_0: "",
+    captcha_1: "",
   });
 
-  const [captchaUrl, setCaptchaUrl] = useState("");
-
-  // Load captcha from the server
-  const loadCaptcha = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/captcha/`);
-      const data = await res.json();
-      setFormData((fd) => ({ ...fd, captcha_0: data.captcha_key }));
-      setCaptchaUrl(data.captcha_image_url);
-    } catch {
-      onMessage("Error loading captcha");
-    }
-  };
+  const [showCaptcha, setShowCaptcha] = useState(false);
 
   useEffect(() => {
-    loadCaptcha();
+    const savedUsername = localStorage.getItem("username") || "";
+    const savedEmail = localStorage.getItem("email") || "";
+    const savedHomepage = localStorage.getItem("homepage_url") || "";
+
+    setFormData((prev) => ({
+      ...prev,
+      username: savedUsername,
+      email: savedEmail,
+      homepage_url: savedHomepage,
+    }));
   }, []);
 
   const handleChange = (e) => {
-    setFormData({...formData, [e.target.name]: e.target.value});
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (["username", "email", "homepage_url"].includes(name)) {
+      localStorage.setItem(name, value);
+    }
   };
 
-  const handleSubmit = async (e) => {
+  const handleOpenCaptcha = (e) => {
     e.preventDefault();
-    onMessage("");
+    setShowCaptcha(true);
+  };
+
+  const handleCaptchaSubmit = async (captchaData) => {
+    const dataToSend = { ...formData, ...captchaData };
 
     try {
       const res = await fetch(`${API_URL}/api/posts/create/`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": getCookie("csrftoken"),
-         },
-        body: JSON.stringify(formData),
-        credentials: "include",  
+        },
+        body: JSON.stringify(dataToSend),
+        credentials: "include",
       });
 
       const data = await res.json();
 
       if (res.ok) {
         onMessage("Post created successfully!");
-        setFormData({
-          username: "",
-          email: "",
-          homepage_url: "",
+        onPostCreated?.();
+        setFormData((prev) => ({
+          ...prev,
           text_html: "",
           captcha_0: "",
           captcha_1: "",
-        });
-        loadCaptcha(); // refresh captcha after successful submit
+        }));
       } else {
-        onMessage("Error: " + (Array.isArray(data.error) ? data.error.join(", ") : data.error));
-        loadCaptcha(); // refresh captcha after error
+        onMessage(
+          "Error: " +
+            (Array.isArray(data.error) ? data.error.join(", ") : data.error)
+        );
       }
     } catch {
       onMessage("Network error");
@@ -74,36 +80,61 @@ function PostForm({ onMessage }) {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div>
-        <label>User Name:</label><br />
-        <input name="username" value={formData.username} onChange={handleChange} required />
-      </div>
+    <>
+      <form onSubmit={handleOpenCaptcha}>
+        <div>
+          <label>User Name:</label><br />
+          <input
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-      <div>
-        <label>Email:</label><br />
-        <input type="email" name="email" value={formData.email} onChange={handleChange} required />
-      </div>
+        <div>
+          <label>Email:</label><br />
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
 
-      <div>
-        <label>Home page (optional):</label><br />
-        <input type="url" name="homepage_url" value={formData.homepage_url} onChange={handleChange} />
-      </div>
+        <div>
+          <label>Home page (optional):</label><br />
+          <input
+            type="url"
+            name="homepage_url"
+            value={formData.homepage_url}
+            onChange={handleChange}
+          />
+        </div>
 
-      <div>
-        <label>Text:</label><br />
-        <textarea name="text_html" value={formData.text_html} onChange={handleChange} rows={5} required />
-      </div>
+        <div>
+          <label>Text:</label><br />
+          <textarea
+            name="text_html"
+            value={formData.text_html}
+            onChange={handleChange}
+            rows={5}
+            required
+          />
+        </div>
 
-      <Captcha
-        captchaUrl={captchaUrl}
-        onRefresh={loadCaptcha}
-        captchaValue={formData.captcha_1}
-        onChange={handleChange}
-      />
+        <button type="submit">Submit</button>
+      </form>
 
-      <button type="submit">Submit</button>
-    </form>
+      {showCaptcha && (
+        <Captcha
+          onClose={() => setShowCaptcha(false)}
+          onSubmit={handleCaptchaSubmit}
+          onMessage={onMessage}
+        />
+      )}
+    </>
   );
 }
 

@@ -4,6 +4,7 @@ from django.http import JsonResponse
 from django.core.validators import validate_email, URLValidator
 from django.core.exceptions import ValidationError
 from .models import Post
+from .serializers import PostSerializer
 from .forms import PostFormWithCaptcha
 
 validator = URLValidator()
@@ -32,3 +33,9 @@ class PostCreateView(View):
         )
 
         return JsonResponse({"message": "Post created successfully.", "post_id": post.id}, status=201)
+
+class PostListView(View):
+    def get(self, request):
+        posts = Post.objects.all().order_by('-created_at')
+        serializer = PostSerializer(posts, many=True)
+        return JsonResponse(serializer.data, safe=False, status=200)
