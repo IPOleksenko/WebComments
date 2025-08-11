@@ -320,3 +320,12 @@
   outline: none;
   border-color: #007bff;
 }
+
+#preview {
+  border: 1px solid #ccc;
+  padding: 1rem;
+  margin-top: 10px;
+  min-height: 100px;
+  background-color: #f9f9f9;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}

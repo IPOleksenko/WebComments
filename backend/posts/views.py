@@ -1,3 +1,4 @@
+import re
 from rest_framework.views import APIView
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
@@ -34,6 +35,10 @@ class PostCreateView(APIView):
             "captcha_1": form_data.get("captcha_1"),
             "parent_id": parent_id,
         }
+
+        # Format the text_html before saving it to the database
+        formatted_text = self.format_preview(cleaned_data['text_html'])
+        cleaned_data['text_html'] = formatted_text
 
         # Create the form instance
         form = PostFormWithCaptcha(cleaned_data)
@@ -84,6 +89,19 @@ class PostCreateView(APIView):
             "parent_id": parent.id if parent else None,
             "files": [{"filename": record.filename, "content_type": record.content_type} for record in file_records]
         }, status=201)
+
+    def format_preview(self, text):
+        # Replace all \n with <br>
+        formatted_text = text.replace("\n", "<br>")
+
+        # Remove all tags except <a>, <i>, <strong>, <code>, <br>
+        formatted_text = re.sub(r"<(?!\/?(a|code|i|strong|br)(\s[^>]*|)\/?>)[^>]+>", "", formatted_text)
+
+        # Remove all attributes from tags except <a>, keep only href and title in <a>
+        formatted_text = re.sub(r'<(?!a\s)(\w+)([^>]*?)>', r'<\1>', formatted_text)  # Remove attributes from all tags except <a>
+        formatted_text = re.sub(r'<a([^>]*?)(?!\s(?:href|title)[^>]*)(\s[^>]*?)?>', r'<a\1>', formatted_text)  # Remove attributes except href and title from <a>
+
+        return formatted_text
 
 
 class PostListView(APIView):

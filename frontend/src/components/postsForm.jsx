@@ -19,6 +19,8 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
 
   const [files, setFiles] = useState([]);
   const [showCaptcha, setShowCaptcha] = useState(false);
+  const [previewText, setPreviewText] = useState("");
+
   const formId = parentId ? `reply-form-${parentId}` : 'main-post-form';
 
   useEffect(() => {
@@ -42,7 +44,22 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
     if (["username", "email", "homepage_url"].includes(name)) {
       localStorage.setItem(name, value);
     }
+
+    setPreviewText(formatPreview(value));
   };
+
+const formatPreview = (text) => {
+  // Replace all \n with <br>
+  let formattedText = text.replace(/\n/g, '<br>');
+
+  // Remove all tags except <a>, <i>, <strong>, <code>, <br>
+  formattedText = formattedText.replace(/<(?!\/?(a|code|i|strong|br)(\s[^>]*|)\/?>)[^>]+>/g, '');
+
+  // Only keep href and title attributes for the <a> tag
+  formattedText = formattedText.replace(/<a([^>]*?)\s+(?!href|title)[^>]+>/g, '<a$1>');
+
+  return formattedText;
+};
 
   const handleFileChange = (newFiles, errors) => {
     if (errors.length > 0) {
@@ -86,6 +103,7 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
           captcha_1: "",
         }));
         setFiles([]);
+        setPreviewText('');
       } else {
         onMessage(
           "Error: " +
@@ -117,7 +135,17 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
         formattedText = `<code>${selectedText}</code>`;
         break;
       case 'link':
-        formattedText = `<a href="${selectedText}" title="${selectedText}">Link</a>`;
+        let url = selectedText.trim();
+        
+        if (url && !/^https?:\/\//i.test(url)) {
+          url = "http://" + url;
+        }
+        
+        formattedText = `<a href="${url}" target="_blank" title="${url}">${selectedText}</a>`;
+        break;
+
+      case 'br':
+        formattedText = `<br>`;
         break;
       default:
         return;
@@ -127,6 +155,7 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
       ...prev,
       text_html: prev.text_html.slice(0, start) + formattedText + prev.text_html.slice(end),
     }));
+    setPreviewText(formatPreview(formData.text_html.slice(0, start) + formattedText + formData.text_html.slice(end)));
   };
 
   return (
@@ -175,6 +204,7 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
             <button type="button" onClick={() => formatText('bold')}>[strong]</button>
             <button type="button" onClick={() => formatText('code')}>[code]</button>
             <button type="button" onClick={() => formatText('link')}>[a]</button>
+            <button type="button" onClick={() => formatText('br')}>[br]</button>
           </div>
           <textarea
             id="text_html"
@@ -183,6 +213,15 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
             onChange={handleChange}
             rows={5}
             required
+          />
+        </div>
+
+        <div className="form-group">
+          <h4>Preview:</h4>
+          <div
+            id="preview"
+            className="preview-container"
+            dangerouslySetInnerHTML={{ __html: previewText }}
           />
         </div>
 
