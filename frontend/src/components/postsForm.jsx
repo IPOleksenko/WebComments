@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import getCookie from "../utils/getCookie.jsx";
-import Captcha from "./captcha.jsx";
-import "../style/components/postsForm.css"
+import getCookie from "../utils/getCookie";
+import Captcha from "./Captcha";
+import FileUpload from "./FileUpload";
+import "../style/components/postsForm.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -18,8 +19,6 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
 
   const [files, setFiles] = useState([]);
   const [showCaptcha, setShowCaptcha] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const [fileErrors, setFileErrors] = useState([]);
   const formId = parentId ? `reply-form-${parentId}` : 'main-post-form';
 
   useEffect(() => {
@@ -45,160 +44,25 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
     }
   };
 
-  const handleFileChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      // Client-side file validation for file input
-      const errors = [];
-      const validFiles = [];
-      
-      Array.from(e.target.files).forEach((file) => {
-        // Check file size (assuming max 5MB per file)
-        if (file.size > 5 * 1024 * 1024) {
-          errors.push(`File ${file.name} is too large. Maximum size is 5MB.`);
-        }
-        
-        // Check file type
-        const allowedTypes = [
-          'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
-          'text/plain'
-        ];
-        
-        if (!allowedTypes.includes(file.type)) {
-          errors.push(`File ${file.name} has an invalid format. Only JPG, GIF, PNG, and txt files are allowed.`);
-        } else {
-          validFiles.push(file);
-        }
-      });
-      
-      if (errors.length > 0) {
-        onMessage("Error: " + errors.join(" "));
-        setFileErrors(errors);
-      } else {
-        setFileErrors([]);
-      }
-      
-      if (validFiles.length > 0) {
-        // Create a new FileList object with valid files
-        const dataTransfer = new DataTransfer();
-        validFiles.forEach(f => dataTransfer.items.add(f));
-        e.target.files = dataTransfer.files;
-        setFiles(dataTransfer.files);
-      } else {
-        // Clear files if all are invalid
-        e.target.value = "";
-        setFiles([]);
-      }
+  const handleFileChange = (newFiles, errors) => {
+    if (errors.length > 0) {
+      onMessage("Error: " + errors.join(" "));
     } else {
-      setFiles(e.target.files); // Update the list of files
-      setFileErrors([]);
-    }
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      // Client-side file validation for drag and drop
-      const errors = [];
-      const validFiles = [];
-      
-      Array.from(e.dataTransfer.files).forEach((file) => {
-        // Check file size (assuming max 5MB per file)
-        if (file.size > 5 * 1024 * 1024) {
-          errors.push(`File ${file.name} is too large. Maximum size is 5MB.`);
-        }
-
-        // Check file type
-        const allowedTypes = [
-          'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
-          'text/plain'
-        ];
-        
-        if (!allowedTypes.includes(file.type)) {
-          errors.push(`File ${file.name} has an invalid format. Only JPG, GIF, PNG, and txt files are allowed.`);
-        } else {
-          validFiles.push(file);
-        }
-      });
-      
-      if (errors.length > 0) {
-        onMessage("Error: " + errors.join(" "));
-        setFileErrors(errors);
-      } else {
-        setFileErrors([]);
-      }
-      
-      if (validFiles.length > 0) {
-        // Create a new FileList object with valid files
-        const dataTransfer = new DataTransfer();
-        validFiles.forEach(f => dataTransfer.items.add(f));
-        document.getElementById(`files-${formId}`).files = dataTransfer.files;
-        setFiles(dataTransfer.files);
-      }
+      setFiles(newFiles);
     }
   };
 
   const handleOpenCaptcha = (e) => {
     e.preventDefault();
-    
-    // Client-side file validation
-    const errors = [];
-    
-    // Check file types and sizes
-    Array.from(files).forEach((file) => {
-      // Check file size (assuming max 5MB per file)
-      if (file.size > 5 * 1024 * 1024) {
-        errors.push(`File ${file.name} is too large. Maximum size is 5MB.`);
-      }
-      
-      // Check file type (allow only JPG, GIF, PNG, and txt files)
-      const allowedTypes = [
-        'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
-        'text/plain'
-      ];
-      
-      if (!allowedTypes.includes(file.type)) {
-        errors.push(`File ${file.name} has an invalid format. Only JPG, GIF, PNG, and txt files are allowed.`);
-      }
-    });
-    
-    setFileErrors(errors);
-    
-    if (errors.length > 0) {
-      onMessage("Error: " + errors.join(" "));
-      return;
-    } else {
-      setFileErrors([]);
-    }
-    
     setShowCaptcha(true);
   };
 
   const handleCaptchaSubmit = async (captchaData) => {
     const dataToSend = { ...formData, ...captchaData };
+    const form = new FormData();
 
-    const form = new FormData(); // Use FormData to send files
-
-    // Add all data to FormData
-    Object.keys(dataToSend).forEach((key) => {
-      form.append(key, dataToSend[key]);
-    });
-
-    // Add files to FormData
-    Array.from(files).forEach((file) => {
-      form.append("files", file);
-    });
+    Object.keys(dataToSend).forEach((key) => form.append(key, dataToSend[key]));
+    Array.from(files).forEach((file) => form.append("files", file));
 
     try {
       const res = await fetch(`${API_URL}/api/posts/create/`, {
@@ -221,7 +85,7 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
           captcha_0: "",
           captcha_1: "",
         }));
-        setFiles([]); // Clear files after successful submission
+        setFiles([]);
       } else {
         onMessage(
           "Error: " +
@@ -232,6 +96,37 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
       console.error("Network error:", error);
       onMessage("Network error: " + error.message);
     }
+  };
+
+  // Formatting button handlers
+  const formatText = (formatType) => {
+    const textarea = document.getElementById("text_html");
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.slice(start, end);
+    let formattedText;
+
+    switch (formatType) {
+      case 'italic':
+        formattedText = `<i>${selectedText}</i>`;
+        break;
+      case 'bold':
+        formattedText = `<strong>${selectedText}</strong>`;
+        break;
+      case 'code':
+        formattedText = `<code>${selectedText}</code>`;
+        break;
+      case 'link':
+        formattedText = `<a href="${selectedText}" title="${selectedText}">Link</a>`;
+        break;
+      default:
+        return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      text_html: prev.text_html.slice(0, start) + formattedText + prev.text_html.slice(end),
+    }));
   };
 
   return (
@@ -275,6 +170,12 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
 
         <div className="form-group">
           <label htmlFor="text_html">Text:</label>
+          <div className="toolbar">
+            <button type="button" onClick={() => formatText('italic')}>[i]</button>
+            <button type="button" onClick={() => formatText('bold')}>[strong]</button>
+            <button type="button" onClick={() => formatText('code')}>[code]</button>
+            <button type="button" onClick={() => formatText('link')}>[a]</button>
+          </div>
           <textarea
             id="text_html"
             name="text_html"
@@ -285,68 +186,12 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
           />
         </div>
 
-        {/* File upload field */}
-        <div className="form-group">
-          <label htmlFor="files">Attach files:</label>
-          <div
-            className={`file-upload ${dragOver ? 'drag-over' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            <input
-              id={`files-${formId}`}
-              type="file"
-              name="files"
-              multiple
-              onChange={handleFileChange}
-            />
-            <label htmlFor={`files-${formId}`} className="file-upload-label">
-              {dragOver ? 'Drop files here' : 'Choose Files or Drag & Drop'}
-            </label>
-            {files.length > 0 && (
-              <div className="file-list">
-                <h4>Selected Files:</h4>
-                <ul>
-                  {Array.from(files).map((file, index) => (
-                    <li key={`${file.name}-${index}`}>
-                      {file.name}
-                      <button
-                        type="button"
-                        className="remove-file-btn"
-                        onClick={() => {
-                          const newFiles = Array.from(files).filter((_, i) => i !== index);
-                          // Create a new FileList object
-                          const dataTransfer = new DataTransfer();
-                          newFiles.forEach(f => dataTransfer.items.add(f));
-                          document.getElementById(`files-${formId}`).files = dataTransfer.files;
-                          setFiles(dataTransfer.files);
-                        }}
-                      >
-                        Remove
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {fileErrors.length > 0 && (
-              <div className="file-errors">
-                <button
-                  className="close-errors-btn"
-                  onClick={() => setFileErrors([])}
-                >
-                  ×
-                </button>
-                <ul>
-                  {fileErrors.map((error, index) => (
-                    <li key={index}>{error}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
+        <FileUpload 
+          formId={formId}
+          files={files} 
+          onFileChange={handleFileChange} 
+          onMessage={onMessage}
+        />
 
         <button type="submit" className="submit-btn">
           {parentId ? "Reply" : "Submit"}
