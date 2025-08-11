@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from django.http import JsonResponse
 from django.core.exceptions import ValidationError
+from django.core.paginator import Paginator
 from .models import Post, FileForPost
 from .serializers import PostSerializer
 from .forms import PostFormWithCaptcha
@@ -81,6 +82,17 @@ class PostCreateView(APIView):
 
 class PostListView(APIView):
     def get(self, request):
-        posts = Post.objects.filter(parent=None).order_by('-created_at')
-        serializer = PostSerializer(posts, many=True)
-        return JsonResponse(serializer.data, safe=False, status=200)
+        page = int(request.GET.get('page', 1))
+        limit = int(request.GET.get('limit', 25))
+
+        posts = Post.objects.filter(parent=None).order_by('-id')
+        paginator = Paginator(posts, limit)
+        paginated_posts = paginator.get_page(page)
+
+        # Serialize the paginated posts
+        serializer = PostSerializer(paginated_posts, many=True)
+
+        return JsonResponse({
+            "posts": serializer.data,
+            "totalPages": paginator.num_pages,
+        }, status=200)

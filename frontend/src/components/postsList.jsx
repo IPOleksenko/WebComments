@@ -3,6 +3,8 @@ import PostForm from "./postsForm";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+const POSTS_PER_PAGE = 25; // Number of posts per page
+
 function CommentsList({ comments, replyTo, setReplyTo, onReplySuccess }) {
   if (!comments || !comments.length) return null;
 
@@ -67,18 +69,21 @@ function CommentsList({ comments, replyTo, setReplyTo, onReplySuccess }) {
 }
 
 const PostsList = forwardRef((props, ref) => {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [replyTo, setReplyTo] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1); // Current page
+  const [totalPages, setTotalPages] = useState(1); // Total number of pages
 
-  const fetchPosts = async () => {
+  const fetchPosts = async (page = 1) => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/posts/get/`);
+      const res = await fetch(`${API_URL}/api/posts/get/?page=${page}&limit=${POSTS_PER_PAGE}`);
       if (!res.ok) throw new Error("Failed to fetch posts");
       const data = await res.json();
-      setPosts(data);
+      setPosts(data.posts || []); // If data is empty, set an empty array
+      setTotalPages(data.totalPages || 1); // Total number of pages
     } catch (err) {
       setError(err.message);
     } finally {
@@ -91,8 +96,16 @@ const PostsList = forwardRef((props, ref) => {
   }));
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    fetchPosts(currentPage);
+  }, [currentPage]);
+
+  const handlePageChange = (direction) => {
+    if (direction === "next" && currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    } else if (direction === "prev" && currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
 
   if (loading) return <p>Loading posts...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -149,7 +162,7 @@ const PostsList = forwardRef((props, ref) => {
               parentId={id}
               onMessage={(msg) => alert(msg)}
               onPostCreated={() => {
-                fetchPosts();
+                fetchPosts(currentPage);
                 setReplyTo(null);
               }}
             />
@@ -160,12 +173,31 @@ const PostsList = forwardRef((props, ref) => {
             replyTo={replyTo}
             setReplyTo={setReplyTo}
             onReplySuccess={() => {
-              fetchPosts();
+              fetchPosts(currentPage);
               setReplyTo(null);
             }}
           />
         </div>
       ))}
+
+      {/* Pagination controls */}
+      <div style={{ marginTop: 20 }}>
+        <button
+          onClick={() => handlePageChange("prev")}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </button>
+        <span style={{ margin: "0 10px" }}>
+          Page {currentPage} of {totalPages}
+        </span>
+        <button
+          onClick={() => handlePageChange("next")}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 });
