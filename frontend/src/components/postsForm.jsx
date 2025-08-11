@@ -20,6 +20,7 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
   const [files, setFiles] = useState([]);
   const [showCaptcha, setShowCaptcha] = useState(false);
   const [previewText, setPreviewText] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const formId = parentId ? `reply-form-${parentId}` : 'main-post-form';
 
@@ -45,21 +46,59 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
       localStorage.setItem(name, value);
     }
 
-    setPreviewText(formatPreview(value));
+    // Update preview text
+    const preview = formatPreview(value);
+    setPreviewText(preview.text);
+    setErrorMessage(preview.error);
   };
 
-const formatPreview = (text) => {
-  // Replace all \n with <br>
-  let formattedText = text.replace(/\n/g, '<br>');
+  const formatPreview = (text) => {
+    // Replace all \n with <br>
+    let formattedText = text.replace(/\n/g, '<br>');
 
-  // Remove all tags except <a>, <i>, <strong>, <code>, <br>
-  formattedText = formattedText.replace(/<(?!\/?(a|code|i|strong|br)(\s[^>]*|)\/?>)[^>]+>/g, '');
+    // Remove all tags except <a>, <i>, <strong>, <code>, <br>
+    formattedText = formattedText.replace(/<(?!\/?(a|code|i|strong|br)(\s[^>]*|)\/?>)[^>]+>/g, '');
 
-  // Only keep href and title attributes for the <a> tag
-  formattedText = formattedText.replace(/<a([^>]*?)\s+(?!href|title)[^>]+>/g, '<a$1>');
+    // Only keep href and title attributes for the <a> tag
+    formattedText = formattedText.replace(/<a([^>]*?)\s+(?!href|title)[^>]+>/g, '<a$1>');
 
-  return formattedText;
-};
+    // Check for unclosed tags
+    const unclosedTags = checkUnclosedTags(formattedText);
+    
+    return { text: formattedText, error: unclosedTags };
+  };
+
+  const checkUnclosedTags = (text) => {
+    const tagStack = [];
+    const tagRegex = /<\/?([a-zA-Z]+)([^>]*)>/g;
+    let match;
+    let unclosedTags = [];
+
+    // Find all tags
+    while ((match = tagRegex.exec(text)) !== null) {
+      const [fullMatch, tagName] = match;
+
+      if (fullMatch.startsWith("</")) {
+        // Closing tag, pop from stack
+        const lastTag = tagStack.pop();
+        if (lastTag !== tagName) {
+          unclosedTags.push(`Missing closing tag for <${lastTag}>`);
+        }
+      } else {
+        // Opening tag, push to stack
+        if (tagName !== "br") {
+          tagStack.push(tagName);
+        }
+      }
+    }
+
+    // If there are any unclosed tags in the stack
+    while (tagStack.length > 0) {
+      unclosedTags.push(`Missing closing tag for <${tagStack.pop()}>`);
+    }
+
+    return unclosedTags.length > 0 ? unclosedTags.join(", ") : null;
+  };
 
   const handleFileChange = (newFiles, errors) => {
     if (errors.length > 0) {
@@ -155,7 +194,7 @@ const formatPreview = (text) => {
       ...prev,
       text_html: prev.text_html.slice(0, start) + formattedText + prev.text_html.slice(end),
     }));
-    setPreviewText(formatPreview(formData.text_html.slice(0, start) + formattedText + formData.text_html.slice(end)));
+    setPreviewText(formatPreview(formData.text_html.slice(0, start) + formattedText + formData.text_html.slice(end)).text);
   };
 
   return (
@@ -215,6 +254,8 @@ const formatPreview = (text) => {
             required
           />
         </div>
+
+        {errorMessage && <div className="error-message" style={{ color: 'yellow' }}>{errorMessage}</div>}
 
         <div className="form-group">
           <h4>Preview:</h4>
