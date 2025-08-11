@@ -11,11 +11,13 @@ function Home() {
   };
 
   return (
-    <>
-      <PostForm onMessage={setMessage} onPostCreated={handlePostCreated} />
-      {message && <p>{message}</p>}
-      <PostsList ref={postsListRef} />
-    </>
+    <div className="home-page">
+      <div className="home-container">
+        <PostForm onMessage={setMessage} onPostCreated={handlePostCreated} />
+        {message && <div className="message success">{message}</div>}
+        <PostsList ref={postsListRef} />
+      </div>
+    </div>
   );
 }
 

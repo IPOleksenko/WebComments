@@ -11,13 +11,16 @@ function App() {
   }, []);
 
   return (
-    <>
+    <div className="app">
+      <header>
+        <h1>WebComments</h1>
+      </header>
       <Routes>
         <Route path="/" element={<Home />} />
 
         <Route path="*" element={<PageNotFound />} />
       </Routes>
-    </>
+    </div>
   );
 }
 
