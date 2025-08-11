@@ -12,6 +12,10 @@ class PostCreateView(APIView):
         # Extract form data from request.POST
         form_data = request.POST.dict()
         
+        # Debug: Print the raw text_html to see if newlines are preserved
+        raw_text = request.POST.get('text_html', '')
+        print(f"Raw text_html from request: {repr(raw_text)}")
+        
         # Extract files from request.FILES
         files = request.FILES.getlist('files')
 
@@ -48,6 +52,7 @@ class PostCreateView(APIView):
                 return JsonResponse({"error": f"Parent post with id={parent_id} not found."}, status=404)
 
         # Create the post
+        print(f"Text being saved to database: {repr(cleaned_data['text_html'])}")
         post = Post.objects.create(
             username=cleaned_data["username"],
             email=cleaned_data["email"],
@@ -55,6 +60,7 @@ class PostCreateView(APIView):
             text_html=cleaned_data["text_html"],
             parent=parent
         )
+        print(f"Text saved in database: {repr(post.text_html)}")
 
         # Handle files
         file_records = []
@@ -84,8 +90,18 @@ class PostListView(APIView):
     def get(self, request):
         page = int(request.GET.get('page', 1))
         limit = int(request.GET.get('limit', 25))
+        
+        # Get sorting parameters
+        sort_by = request.GET.get('sort_by', 'id')
+        sort_order = request.GET.get('sort_order', 'desc')
 
-        posts = Post.objects.filter(parent=None).order_by('-id')
+        # Build the order_by clause
+        if sort_order == 'asc':
+            order_by = sort_by
+        else:
+            order_by = f'-{sort_by}'
+
+        posts = Post.objects.filter(parent=None).order_by(order_by)
         paginator = Paginator(posts, limit)
         paginated_posts = paginator.get_page(page)
 
@@ -95,4 +111,6 @@ class PostListView(APIView):
         return JsonResponse({
             "posts": serializer.data,
             "totalPages": paginator.num_pages,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
         }, status=200)

@@ -14,6 +14,11 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = "__all__"
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        print(f"Serializing post {instance.id}: text_html = {repr(data.get('text_html'))}")
+        return data
+
     def get_replies(self, obj):
         children = Post.objects.filter(parent=obj).order_by("created_at")
         return PostSerializer(children, many=True).data

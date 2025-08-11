@@ -35,5 +35,18 @@ class PostFormWithCaptcha(forms.Form):
 
     def clean_text_html(self):
         text = self.cleaned_data["text_html"]
-        cleaned = bleach.clean(text, tags=allowed_tags, attributes=allowed_attrs, strip=True)
+        
+        # Preserve newlines and spacing by converting them to <br> tags
+        # Handle multiple consecutive newlines properly
+        import re
+        
+        # Convert multiple consecutive newlines to preserve paragraph breaks
+        # Two or more newlines should create more spacing
+        text = re.sub(r'\n{3,}', '<br><br><br>', text)  # 3+ newlines become 3 br tags
+        text = re.sub(r'\n\n', '<br><br>', text)  # 2 newlines become 2 br tags
+        text = text.replace('\n', '<br>')  # Single newlines become single br tags
+        
+        # Clean the HTML with bleach, allowing br tags and our allowed tags
+        cleaned = bleach.clean(text, tags=allowed_tags + ['br'], attributes=allowed_attrs, strip=True)
+        print(f"Text after cleaning: {repr(cleaned)}")
         return cleaned
