@@ -8,7 +8,7 @@ function CommentsList({ comments, replyTo, setReplyTo, onReplySuccess }) {
 
   return (
     <div style={{ marginLeft: 20, borderLeft: "2px solid #ccc", paddingLeft: 10 }}>
-      {comments.map(({ id, username, text_html, created_at, replies }) => (
+      {comments.map(({ id, username, text_html, created_at, replies, files }) => (
         <div key={id} style={{ marginBottom: 10 }}>
           <strong>{username}</strong>
           <div dangerouslySetInnerHTML={{ __html: text_html }} />
@@ -17,6 +17,33 @@ function CommentsList({ comments, replyTo, setReplyTo, onReplySuccess }) {
           <button onClick={() => setReplyTo(replyTo === id ? null : id)}>
             {replyTo === id ? "Cancel" : "Reply"}
           </button>
+
+          {/* Render files for this comment */}
+          {files && files.length > 0 && (
+            <div>
+              <h4>Files:</h4>
+              {files.map((file, idx) => (
+                <div key={idx}>
+                  {file.content_type.startsWith("image") ? (
+                    <img
+                      src={`data:${file.content_type};base64,${file.file_base64}`}
+                      alt={file.filename}
+                      style={{ maxWidth: "100px", marginBottom: "10px" }}
+                    />
+                  ) : (
+                    <div>
+                      <a
+                        href={`data:${file.content_type};base64,${file.file_base64}`}
+                        download={file.filename}
+                      >
+                        Download {file.filename}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {replyTo === id && (
             <PostForm
@@ -73,7 +100,7 @@ const PostsList = forwardRef((props, ref) => {
 
   return (
     <div>
-      {posts.map(({ id, username, email, homepage_url, text_html, created_at, replies }) => (
+      {posts.map(({ id, username, email, homepage_url, text_html, created_at, replies, files }) => (
         <div key={id} style={{ border: "1px solid #ccc", marginBottom: 10, padding: 10 }}>
           <p><strong>{username}</strong> ({email})</p>
           {homepage_url && (
@@ -89,6 +116,33 @@ const PostsList = forwardRef((props, ref) => {
           <button onClick={() => setReplyTo(replyTo === id ? null : id)}>
             {replyTo === id ? "Cancel" : "Reply"}
           </button>
+
+          {/* Render files for the post */}
+          {files && files.length > 0 && (
+            <div>
+              <h4>Files:</h4>
+              {files.map((file, idx) => (
+                <div key={idx}>
+                  {file.content_type.startsWith("image") ? (
+                    <img
+                      src={`data:${file.content_type};base64,${file.file_base64}`}
+                      alt={file.filename}
+                      style={{ maxWidth: "100px", marginBottom: "10px" }}
+                    />
+                  ) : (
+                    <div>
+                      <a
+                        href={`data:${file.content_type};base64,${file.file_base64}`}
+                        download={file.filename}
+                      >
+                        Download {file.filename}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {replyTo === id && (
             <PostForm

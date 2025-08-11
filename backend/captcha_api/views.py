@@ -1,10 +1,9 @@
-from django.views import View
+from rest_framework.views import APIView
 from django.http import JsonResponse
 from captcha.models import CaptchaStore
 from captcha.helpers import captcha_image_url
-from django.conf import settings
 
-class CaptchaAPIView(View):
+class CaptchaAPIView(APIView):
     def get(self, request):
         key = CaptchaStore.generate_key()
         relative_url = captcha_image_url(key)

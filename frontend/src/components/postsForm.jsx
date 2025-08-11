@@ -15,6 +15,7 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
     parent_id: parentId,
   });
 
+  const [files, setFiles] = useState([]);
   const [showCaptcha, setShowCaptcha] = useState(false);
 
   useEffect(() => {
@@ -40,6 +41,10 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
     }
   };
 
+  const handleFileChange = (e) => {
+    setFiles(e.target.files); // Update the list of files
+  };
+
   const handleOpenCaptcha = (e) => {
     e.preventDefault();
     setShowCaptcha(true);
@@ -48,14 +53,25 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
   const handleCaptchaSubmit = async (captchaData) => {
     const dataToSend = { ...formData, ...captchaData };
 
+    const form = new FormData(); // Use FormData to send files
+
+    // Add all data to FormData
+    Object.keys(dataToSend).forEach((key) => {
+      form.append(key, dataToSend[key]);
+    });
+
+    // Add files to FormData
+    Array.from(files).forEach((file) => {
+      form.append("files", file);
+    });
+
     try {
       const res = await fetch(`${API_URL}/api/posts/create/`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           "X-CSRFToken": getCookie("csrftoken"),
         },
-        body: JSON.stringify(dataToSend),
+        body: form,
         credentials: "include",
       });
 
@@ -70,6 +86,7 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
           captcha_0: "",
           captcha_1: "",
         }));
+        setFiles([]); // Clear files after successful submission
       } else {
         onMessage(
           "Error: " +
@@ -123,6 +140,17 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
             onChange={handleChange}
             rows={5}
             required
+          />
+        </div>
+
+        {/* File upload field */}
+        <div>
+          <label>Attach files:</label><br />
+          <input
+            type="file"
+            name="files"
+            multiple
+            onChange={handleFileChange}
           />
         </div>
 

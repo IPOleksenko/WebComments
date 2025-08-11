@@ -1,9 +1,9 @@
 from django.http import JsonResponse
-from django.views import View
+from rest_framework.views import APIView
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.utils.decorators import method_decorator
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
-class GetCsrfTokenView(View):
+class GetCsrfTokenView(APIView):
     def get(self, request):
         return JsonResponse({"message": "CSRF cookie set"})

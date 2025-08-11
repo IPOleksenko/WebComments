@@ -24,3 +24,12 @@ class Post(models.Model):
     @property
     def is_comment(self):
         return self.parent is not None
+
+class FileForPost(models.Model):
+    post = models.ForeignKey('Post', on_delete=models.CASCADE, related_name='files')
+    file_base64 = models.TextField(blank=True, null=True)
+    filename = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"File for {self.post.username}: {self.filename}"

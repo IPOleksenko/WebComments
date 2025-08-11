@@ -9,9 +9,9 @@ djangorestframework = "*"
 dotenv = "*"
 psycopg2 = "*"
 django-cors-headers = "*"
-nodeenv = "*"
 bleach = "*"
 django-simple-captcha = "*"
+nodeenv = "*"
 
 [dev-packages]
 
