@@ -7,59 +7,9 @@
   </tr>
 </table>
 
-## 📌 Setup Instructions
-
-
 ### 🔧 Fill Environment Files
 
 Ensure that all required environment variables are present in both `env/backend.env` and `env/frontend.env` files before proceeding.
-
-### 📦 Install Dependencies
-
-To install all necessary dependencies in a virtual environment, run:
-
-```sh
-py install.py
-```
-
-### 🔄 Migrate Database
-
-Run database migrations using:
-
-```sh
-py migrate.py
-```
-
-### 🔐 Create Superuser
-
-To automatically create a Django superuser, run the following script after applying migrations:
-
-```sh
-py create_superuser.py
-```
-
-This will create a superuser with:
-
-- 👤 Username: `admin`  
-- 📧 Email: `admin@gmail.com`  
-- 🔑 Password: `admin`
-
-You can also create a custom superuser by passing credentials in the format `username:password`:
-
-```sh
-py create_superuser.py username:password
-```
-
-This will use `username@gmail.com` as the email address.  
-The script checks if the user already exists and only creates the superuser if necessary.
-
-### 🚀 Start the Project
-
-To start the backend server, execute:
-
-```sh
-py run.py
-```
 
 ## 📁 Git Ignore Environment Files
 
@@ -78,6 +28,12 @@ If you need to track changes again:
 git update-index --no-assume-unchanged env/backend.env
 git update-index --no-assume-unchanged env/frontend.env
 ```
+
+## Documentation
+
+[Tools](./Documentation/Tools.md).
+
+[Django App](./Documentation/Django_App.md).
 
 ## ✍️ Authors
 
