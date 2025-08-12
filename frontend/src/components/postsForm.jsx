@@ -47,9 +47,11 @@ function PostsForm({ onMessage, onPostCreated, parentId = null }) {
     }
 
     // Update preview text
-    const preview = formatPreview(value);
-    setPreviewText(preview.text);
-    setErrorMessage(preview.error);
+    if (name === "text_html") {
+      const preview = formatPreview(value);
+      setPreviewText(preview.text);
+      setErrorMessage(preview.error);
+    }
   };
 
   const formatPreview = (text) => {
